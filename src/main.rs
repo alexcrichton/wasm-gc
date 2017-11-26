@@ -75,6 +75,8 @@ fn main() {
         cx.blacklist.insert("__divsi3");
         cx.blacklist.insert("__divdi3");
         cx.blacklist.insert("__divti3");
+        cx.blacklist.insert("__divdf3");
+        cx.blacklist.insert("__divsf3");
         cx.blacklist.insert("__modsi3");
         cx.blacklist.insert("__moddi3");
         cx.blacklist.insert("__modti3");
@@ -82,6 +84,8 @@ fn main() {
         cx.blacklist.insert("__divmoddi4");
         cx.blacklist.insert("__muldi3");
         cx.blacklist.insert("__multi3");
+        cx.blacklist.insert("__muldf3");
+        cx.blacklist.insert("__mulsf3");
         cx.blacklist.insert("__mulosi4");
         cx.blacklist.insert("__mulodi4");
         cx.blacklist.insert("__muloti4");
