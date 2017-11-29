@@ -24,6 +24,6 @@ for inclusion in this project by you, as defined in the Apache-2.0 license,
 
 Install `gcc`:
 
-`sudo apt install gcc -y`
+`sudo apt update && sudo apt install gcc -y`
 
 and then install the crate: `cargo install --git https://github.com/alexcrichton/wasm-gc`
