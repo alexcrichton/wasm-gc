@@ -89,6 +89,7 @@ fn main() {
         cx.blacklist.insert("__mulosi4");
         cx.blacklist.insert("__mulodi4");
         cx.blacklist.insert("__muloti4");
+        cx.blacklist.insert("rust_eh_personality");
 
         if let Some(section) = module.export_section() {
             for (i, entry) in section.entries().iter().enumerate() {
