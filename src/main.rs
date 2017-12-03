@@ -2,6 +2,7 @@ extern crate parity_wasm;
 #[macro_use]
 extern crate log;
 extern crate env_logger;
+extern crate rustc_demangle;
 
 use std::collections::{BTreeSet, HashSet};
 use std::env;
@@ -713,6 +714,7 @@ impl<'a> RemapContext<'a> {
     fn serialize_name_map(&self, names: &[(u32, &str)], dst: &mut Vec<u8>) {
         VarUint32::from(names.len()).serialize(dst).unwrap();
         for &(index, name) in names {
+            let name = format!("{}", rustc_demangle::demangle(name));
             VarUint32::from(index).serialize(dst).unwrap();
             VarUint32::from(name.len()).serialize(dst).unwrap();
             dst.extend(name.as_bytes());
