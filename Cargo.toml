@@ -7,3 +7,4 @@ authors = ["Alex Crichton <alex@alexcrichton.com>"]
 parity-wasm = "0.15"
 log = "0.3"
 env_logger = { version = "0.4", default-features = false }
+rustc-demangle = "0.1.5"
