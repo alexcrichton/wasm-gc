@@ -99,6 +99,7 @@ fn main() {
         }
         if let Some(section) = module.import_section() {
             for (i, entry) in section.entries().iter().enumerate() {
+                debug!("import {:?}", entry);
                 if let External::Memory(_) = *entry.external() {
                     cx.add_import_entry(entry, i as u32);
                 }
@@ -232,6 +233,7 @@ impl<'a> LiveContext<'a> {
         }
         if let Some(imports) = self.import_section {
             if idx < imports.functions() as u32 {
+                debug!("adding import: {}", idx);
                 let import = imports.entries().get(idx as usize).expect("expected an imported function with this index");
                 self.analysis.imports.insert(idx);
                 return self.add_import_entry(import, idx);
@@ -239,6 +241,7 @@ impl<'a> LiveContext<'a> {
             idx -= imports.functions() as u32;
         }
 
+        debug!("adding function: {}", idx);
         self.analysis.codes.insert(idx);
         let functions = self.function_section.expect("no functions section");
         self.add_type(functions.entries()[idx as usize].type_ref());
@@ -408,16 +411,17 @@ impl<'a> RemapContext<'a> {
         }
 
         let nfuncs = m.function_section().map(|m| m.entries().len() as u32);
-        let nimported_functions = m.import_section().map(|m|
-            m.entries().into_iter()
-            .filter(|entry|
-                if let External::Function(_) = *entry.external() {
-                    true
-                }
-                else {
-                    false
+        let nimported_functions = m.import_section().map(|m| {
+            m.entries()
+                .into_iter()
+                .filter(|entry| {
+                    match *entry.external() {
+                        External::Function(_) => true,
+                        _ => false,
+                    }
                 })
-            .count() as u32);
+                .count() as u32
+        });
         let functions = remap(nfuncs.unwrap_or(0) + nimported_functions.unwrap_or(0),
                               &analysis.functions);
 
@@ -507,6 +511,7 @@ impl<'a> RemapContext<'a> {
     }
 
     fn remap_import_entry(&self, s: &mut ImportEntry) {
+        debug!("remap import entry {:?}", s);
         match *s.external_mut() {
             External::Function(ref mut f) => self.remap_function_idx(f),
             External::Table(_) => {}
