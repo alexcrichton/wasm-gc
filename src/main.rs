@@ -97,6 +97,13 @@ fn main() {
                 cx.add_export_entry(entry, i as u32);
             }
         }
+        if let Some(section) = module.import_section() {
+            for (i, entry) in section.entries().iter().enumerate() {
+                if let External::Memory(_) = *entry.external() {
+                    cx.add_import_entry(entry, i as u32);
+                }
+            }
+        }
         if let Some(section) = module.data_section() {
             for entry in section.entries() {
                 cx.add_data_segment(entry);
@@ -166,13 +173,27 @@ struct Analysis {
     exports: BTreeSet<u32>,
 }
 
+enum Memories<'a> {
+    Exported(&'a MemorySection),
+    Imported(&'a MemoryType),
+}
+
+impl<'a> Memories<'a> {
+    fn has_entry(&self, idx: usize) -> bool {
+        match *self {
+            Memories::Exported(memory_section) => idx < memory_section.entries().len(),
+            Memories::Imported(_) => idx == 0,
+        }
+    }
+}
+
 struct LiveContext<'a> {
     blacklist: HashSet<&'static str>,
     function_section: Option<&'a FunctionSection>,
     type_section: Option<&'a TypeSection>,
     code_section: Option<&'a CodeSection>,
     table_section: Option<&'a TableSection>,
-    memory_section: Option<&'a MemorySection>,
+    memories: Option<Memories<'a>>,
     global_section: Option<&'a GlobalSection>,
     import_section: Option<&'a ImportSection>,
     analysis: Analysis,
@@ -180,13 +201,25 @@ struct LiveContext<'a> {
 
 impl<'a> LiveContext<'a> {
     fn new(module: &'a Module) -> LiveContext<'a> {
+        let memories = module.memory_section().map(Memories::Exported).or_else(|| {
+            if let Some(import_section) = module.import_section() {
+                for entry in import_section.entries() {
+                    if let External::Memory(ref memory_type) = *entry.external() {
+                        return Some(Memories::Imported(memory_type));
+                    }
+                }
+            }
+
+            None
+        });
+
         LiveContext {
             blacklist: HashSet::new(),
             function_section: module.function_section(),
             type_section: module.type_section(),
             code_section: module.code_section(),
             table_section: module.table_section(),
-            memory_section: module.memory_section(),
+            memories: memories,
             global_section: module.global_section(),
             import_section: module.import_section(),
             analysis: Analysis::default(),
@@ -198,11 +231,12 @@ impl<'a> LiveContext<'a> {
             return
         }
         if let Some(imports) = self.import_section {
-            if let Some(import) = imports.entries().get(idx as usize) {
+            if idx < imports.functions() as u32 {
+                let import = imports.entries().get(idx as usize).expect("expected an imported function with this index");
                 self.analysis.imports.insert(idx);
-                return self.add_import_entry(import);
+                return self.add_import_entry(import, idx);
             }
-            idx -= imports.entries().len() as u32;
+            idx -= imports.functions() as u32;
         }
 
         self.analysis.codes.insert(idx);
@@ -225,9 +259,8 @@ impl<'a> LiveContext<'a> {
         if !self.analysis.memories.insert(idx) {
             return
         }
-        let memories = self.memory_section.expect("no memory section");
-        let memory = &memories.entries()[idx as usize];
-        drop(memory);
+        let memories = self.memories.as_ref().expect("no memory section or imported memory");
+        assert!(memories.has_entry(idx as usize));
     }
 
     fn add_global(&mut self, idx: u32) {
@@ -322,12 +355,15 @@ impl<'a> LiveContext<'a> {
         }
     }
 
-    fn add_import_entry(&mut self, entry: &ImportEntry) {
+    fn add_import_entry(&mut self, entry: &ImportEntry, idx: u32) {
         match *entry.external() {
             External::Function(i) => self.add_type(i),
-            External::Table(_) => {}
-            External::Memory(_) => {}
-            External::Global(_) => {}
+            External::Table(_) => {},
+            External::Memory(_) => {
+                self.add_memory(0);
+                self.analysis.imports.insert(idx);
+            },
+            External::Global(_) => {},
         }
     }
 
@@ -352,7 +388,7 @@ struct RemapContext<'a> {
     types: Vec<u32>,
     tables: Vec<u32>,
     memories: Vec<u32>,
-    nimports: u32,
+    nimported_functions: u32,
 }
 
 impl<'a> RemapContext<'a> {
@@ -372,15 +408,34 @@ impl<'a> RemapContext<'a> {
         }
 
         let nfuncs = m.function_section().map(|m| m.entries().len() as u32);
-        let nimports = m.import_section().map(|m| m.entries().len() as u32);
-        let functions = remap(nfuncs.unwrap_or(0) + nimports.unwrap_or(0),
+        let nimported_functions = m.import_section().map(|m|
+            m.entries().into_iter()
+            .filter(|entry|
+                if let External::Function(_) = *entry.external() {
+                    true
+                }
+                else {
+                    false
+                })
+            .count() as u32);
+        let functions = remap(nfuncs.unwrap_or(0) + nimported_functions.unwrap_or(0),
                               &analysis.functions);
 
         let nglobals = m.global_section().map(|m| m.entries().len() as u32);
         let globals = remap(nglobals.unwrap_or(0), &analysis.globals);
 
-        let nmem = m.memory_section().map(|m| m.entries().len() as u32);
-        let memories = remap(nmem.unwrap_or(0), &analysis.memories);
+        let nmem = m.memory_section().map(|m| m.entries().len() as u32).unwrap_or_else(|| {
+            if let Some(import_section) = m.import_section() {
+                for entry in import_section.entries() {
+                    if let External::Memory(_) = *entry.external() {
+                        return 1;
+                    }
+                }
+            }
+
+            0
+        });
+        let memories = remap(nmem, &analysis.memories);
 
         let ntables = m.table_section().map(|m| m.entries().len() as u32);
         let tables = remap(ntables.unwrap_or(0), &analysis.tables);
@@ -395,7 +450,7 @@ impl<'a> RemapContext<'a> {
             memories,
             tables,
             types,
-            nimports: nimports.unwrap_or(0),
+            nimported_functions: nimported_functions.unwrap_or(0),
         }
     }
 
@@ -463,7 +518,7 @@ impl<'a> RemapContext<'a> {
     fn remap_function_section(&self, s: &mut FunctionSection) -> bool {
         self.retain_offset(&self.analysis.functions,
                            s.entries_mut(),
-                           self.nimports,
+                           self.nimported_functions,
                            "function");
         for f in s.entries_mut() {
             self.remap_func(f);
