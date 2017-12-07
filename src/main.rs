@@ -513,7 +513,7 @@ impl<'a> RemapContext<'a> {
     fn remap_import_entry(&self, s: &mut ImportEntry) {
         debug!("remap import entry {:?}", s);
         match *s.external_mut() {
-            External::Function(ref mut f) => self.remap_function_idx(f),
+            External::Function(ref mut f) => self.remap_type_idx(f),
             External::Table(_) => {}
             External::Memory(_) => {}
             External::Global(_) => {}
