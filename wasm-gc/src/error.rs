@@ -18,8 +18,6 @@ impl fmt::Display for Error {
     }
 }
 
-impl From<ParityWasmError> for Error {
-    fn from(err: ParityWasmError) -> Self {
-        Error(err)
-    }
+pub fn from(parity: ParityWasmError) -> Error {
+    Error(parity)
 }
