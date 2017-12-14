@@ -145,7 +145,6 @@ pub fn garbage_collect(module: &mut Module) {
 
 #[derive(Default)]
 struct Analysis {
-    functions: BTreeSet<u32>,
     codes: BTreeSet<u32>,
     tables: BTreeSet<u32>,
     memories: BTreeSet<u32>,
@@ -209,28 +208,71 @@ impl<'a> LiveContext<'a> {
     }
 
     fn add_function(&mut self, mut idx: u32) {
-        if !self.analysis.functions.insert(idx) {
-            return
-        }
         if let Some(imports) = self.import_section {
             if idx < imports.functions() as u32 {
                 debug!("adding import: {}", idx);
-                let import = imports.entries().get(idx as usize).expect("expected an imported function with this index");
-                self.analysis.imports.insert(idx);
-                return self.add_import_entry(import, idx);
+                let (i, import) = imports.entries()
+                    .iter()
+                    .enumerate()
+                    .filter(|&(_, i)| {
+                        match *i.external() {
+                            External::Function(_) => true,
+                            _ => false,
+                        }
+                    })
+                    .skip(idx as usize)
+                    .next()
+                    .expect("expected an imported function with this index");
+                let i = i as u32;
+                self.analysis.imports.insert(i);
+                return self.add_import_entry(import, i);
             }
             idx -= imports.functions() as u32;
         }
 
+        if !self.analysis.codes.insert(idx) {
+            return
+        }
+
         debug!("adding function: {}", idx);
-        self.analysis.codes.insert(idx);
         let functions = self.function_section.expect("no functions section");
         self.add_type(functions.entries()[idx as usize].type_ref());
         let codes = self.code_section.expect("no codes section");
         self.add_func_body(&codes.bodies()[idx as usize]);
     }
 
-    fn add_table(&mut self, idx: u32) {
+    fn add_table(&mut self, mut idx: u32) {
+        if let Some(imports) = self.import_section {
+            let imported_tables = imports.entries()
+                .iter()
+                .filter(|i| {
+                    match *i.external() {
+                        External::Table(_) => true,
+                        _ => false,
+                    }
+                })
+                .count();
+            let imported_tables = imported_tables as u32;
+            if idx < imported_tables {
+                debug!("adding table import: {}", idx);
+                let (i, import) = imports.entries()
+                    .iter()
+                    .enumerate()
+                    .filter(|&(_, i)| {
+                        match *i.external() {
+                            External::Table(_) => true,
+                            _ => false,
+                        }
+                    })
+                    .skip(idx as usize)
+                    .next()
+                    .expect("expected an imported table with this index");
+                let i = i as u32;
+                self.analysis.imports.insert(i);
+                return self.add_import_entry(import, i);
+            }
+            idx -= imported_tables;
+        }
         if !self.analysis.tables.insert(idx) {
             return
         }
@@ -247,7 +289,29 @@ impl<'a> LiveContext<'a> {
         assert!(memories.has_entry(idx as usize));
     }
 
-    fn add_global(&mut self, idx: u32) {
+    fn add_global(&mut self, mut idx: u32) {
+        if let Some(imports) = self.import_section {
+            if idx < imports.globals() as u32 {
+                debug!("adding global import: {}", idx);
+                let (i, import) = imports.entries()
+                    .iter()
+                    .enumerate()
+                    .filter(|&(_, i)| {
+                        match *i.external() {
+                            External::Global(_) => true,
+                            _ => false,
+                        }
+                    })
+                    .skip(idx as usize)
+                    .next()
+                    .expect("expected an imported global with this index");
+                let i = i as u32;
+                self.analysis.imports.insert(i);
+                return self.add_import_entry(import, i);
+            }
+            idx -= imports.globals() as u32;
+        }
+
         if !self.analysis.globals.insert(idx) {
             return
         }
@@ -372,61 +436,93 @@ struct RemapContext<'a> {
     types: Vec<u32>,
     tables: Vec<u32>,
     memories: Vec<u32>,
-    nimported_functions: u32,
 }
 
 impl<'a> RemapContext<'a> {
     fn new(m: &Module, analysis: &'a Analysis) -> RemapContext<'a> {
-        fn remap(max: u32, retained: &BTreeSet<u32>) -> Vec<u32> {
-            let mut v = Vec::with_capacity(max as usize);
-            let mut offset = 0;
-            for i in 0..max {
-                if retained.contains(&i) {
-                    v.push(i - offset);
+        let mut nfunctions = 0;
+        let mut functions = Vec::new();
+        let mut nglobals = 0;
+        let mut globals = Vec::new();
+        let mut types = Vec::new();
+        let mut ntables = 0;
+        let mut tables = Vec::new();
+        let mut nmemories = 0;
+        let mut memories = Vec::new();
+
+        if let Some(s) = m.type_section() {
+            let mut removed = 0;
+            for i in 0..(s.types().len() as u32) {
+                if analysis.types.contains(&i) {
+                    types.push(i - removed);
                 } else {
-                    v.push(u32::max_value());
-                    offset += 1;
+                    debug!("gc type {}", i);
+                    types.push(u32::max_value());
+                    removed += 1;
                 }
             }
-            return v
         }
-
-        let nfuncs = m.function_section().map(|m| m.entries().len() as u32);
-        let nimported_functions = m.import_section().map(|m| {
-            m.entries()
-                .into_iter()
-                .filter(|entry| {
-                    match *entry.external() {
-                        External::Function(_) => true,
-                        _ => false,
-                    }
-                })
-                .count() as u32
-        });
-        let functions = remap(nfuncs.unwrap_or(0) + nimported_functions.unwrap_or(0),
-                              &analysis.functions);
-
-        let nglobals = m.global_section().map(|m| m.entries().len() as u32);
-        let globals = remap(nglobals.unwrap_or(0), &analysis.globals);
-
-        let nmem = m.memory_section().map(|m| m.entries().len() as u32).unwrap_or_else(|| {
-            if let Some(import_section) = m.import_section() {
-                for entry in import_section.entries() {
-                    if let External::Memory(_) = *entry.external() {
-                        return 1;
-                    }
+        if let Some(s) = m.import_section() {
+            for (i, import) in s.entries().iter().enumerate() {
+                let (dst, ndst) = match *import.external() {
+                    External::Function(_) => (&mut functions, &mut nfunctions),
+                    External::Table(_) => (&mut tables, &mut ntables),
+                    External::Memory(_) => (&mut memories, &mut nmemories),
+                    External::Global(_) => (&mut globals, &mut nglobals),
+                };
+                if analysis.imports.contains(&(i as u32)) {
+                    dst.push(*ndst);
+                    *ndst += 1;
+                } else {
+                    debug!("gc import {}", i);
+                    dst.push(u32::max_value());
                 }
             }
-
-            0
-        });
-        let memories = remap(nmem, &analysis.memories);
-
-        let ntables = m.table_section().map(|m| m.entries().len() as u32);
-        let tables = remap(ntables.unwrap_or(0), &analysis.tables);
-
-        let ntypes = m.type_section().map(|m| m.types().len() as u32);
-        let types = remap(ntypes.unwrap_or(0), &analysis.types);
+        }
+        if let Some(s) = m.function_section() {
+            for i in 0..(s.entries().len() as u32) {
+                if analysis.codes.contains(&i) {
+                    functions.push(nfunctions);
+                    nfunctions += 1;
+                } else {
+                    debug!("gc function {}", i);
+                    functions.push(u32::max_value());
+                }
+            }
+        }
+        if let Some(s) = m.global_section() {
+            for i in 0..(s.entries().len() as u32) {
+                if analysis.globals.contains(&i) {
+                    globals.push(nglobals);
+                    nglobals += 1;
+                } else {
+                    debug!("gc global {}", i);
+                    globals.push(u32::max_value());
+                }
+            }
+        }
+        if let Some(s) = m.table_section() {
+            for i in 0..(s.entries().len() as u32) {
+                if analysis.tables.contains(&i) {
+                    tables.push(ntables);
+                    ntables += 1;
+                } else {
+                    debug!("gc table {}", i);
+                    tables.push(u32::max_value());
+                }
+            }
+        }
+        if let Some(s) = m.memory_section() {
+            for i in 0..(s.entries().len() as u32) {
+                if analysis.memories.contains(&i) {
+                    memories.push(nmemories);
+                    nmemories += 1;
+                } else {
+                    debug!("gc memory {}", i);
+                    memories.push(u32::max_value());
+                }
+            }
+        }
 
         RemapContext {
             analysis,
@@ -435,22 +531,13 @@ impl<'a> RemapContext<'a> {
             memories,
             tables,
             types,
-            nimported_functions: nimported_functions.unwrap_or(0),
         }
     }
 
     fn retain<T>(&self, set: &BTreeSet<u32>, list: &mut Vec<T>, name: &str) {
-        self.retain_offset(set, list, 0, name);
-    }
-
-    fn retain_offset<T>(&self,
-                        set: &BTreeSet<u32>,
-                        list: &mut Vec<T>,
-                        offset: u32,
-                        name: &str) {
         for i in (0..list.len()).rev().map(|x| x as u32) {
-            if !set.contains(&(i + offset)) {
-                debug!("removing {} {}", name, i + offset);
+            if !set.contains(&i) {
+                debug!("removing {} {}", name, i);
                 list.remove(i as usize);
             }
         }
@@ -502,10 +589,7 @@ impl<'a> RemapContext<'a> {
     }
 
     fn remap_function_section(&self, s: &mut FunctionSection) -> bool {
-        self.retain_offset(&self.analysis.functions,
-                           s.entries_mut(),
-                           self.nimported_functions,
-                           "function");
+        self.retain(&self.analysis.codes, s.entries_mut(), "function");
         for f in s.entries_mut() {
             self.remap_func(f);
         }
@@ -652,6 +736,7 @@ impl<'a> RemapContext<'a> {
     }
 
     fn remap_global_idx(&self, i: &mut u32) {
+        trace!("global {} => {}", *i, self.globals[*i as usize]);
         *i = self.globals[*i as usize];
         assert!(*i != u32::max_value());
     }
