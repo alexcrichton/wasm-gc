@@ -1,0 +1,47 @@
+language: rust
+sudo: false
+dist: trusty
+
+matrix:
+  include:
+    - rust: stable
+    - env: TARGET=x86_64-unknown-linux-musl DEPLOY=1
+      before_script:
+        - rustup target add $TARGET
+      script: cargo build --release --target $TARGET --locked
+
+    - os: osx
+    - os: osx
+      env: MACOSX_DEPLOYMENT_TARGET=10.7 DEPLOY=1 TARGET=x86_64-apple-darwin
+      script: cargo build --release --target $TARGET --locked
+
+addons:
+  apt:
+    packages:
+    - musl-tools
+
+script:
+  - cargo test --locked
+
+notifications:
+  email:
+    on_success: never
+
+before_deploy:
+  - name="wasm-gc-$TRAVIS_TAG-$TARGET"
+  - mkdir $name
+  - cp target/$TARGET/release/wasm-gc $name/
+  - cp README.md LICENSE-MIT LICENSE-APACHE $name/
+  - tar czvf $name.tar.gz $name
+
+deploy:
+  api_key:
+    secure: "v5eBBx8qMH8e3D1GHBDZsPgbgC83J/Lda4Z42CSrbDqkbidY+ySMQz+oT9m45jBaO5in8UhlMgBjPV4Wv65KEF3CJ1co85KUc88J6aBR0WfuMSgp/sYR6zhGgdgCQUmMCR0sY+OYtlPSlTXf4mPAvb0ecIUMzsKmBrHTdaD+VlasPe8lqzvM/J5VF4gSEjci2isj7agfhjiz52dUybsIX98I5iMlmi0YgZp0Rht4HLuIKTQuYrsKuWqSBGB8FIW4Lpnxnwy/nhzfIvWC8lbzvHvEBwE6zud4KCRdWLWkEhtoTQUAqGxQ9843m0rRTDHxU487Kyg0j1mphV2wJAgVy35QWeHTX7psgXHEF6nlFlIigcOxELb7osi4mqbYFTFThE1buD+0CEzGn1nvcpsxuezNK5PiiV1tW/d4yZk5ZNzVdXVit8rlkdgQg2WPi/VFPWI8sEVcIrTpyiYa0vrhKUuqiob38mmz1LszW5FBh6iCy3itQdNa3V+4Nvlt3wcmu0n5ICrbmCO54b4/YD7ntXZF3W1mJpLa1RWP3n67OE2m/CQPNpXt72Zt8FkiQ4WqnUw9HfMaEGjJqFljNPugX5P6hyAq8X5kqTHpzmka0VJdn5qgyOjIamgHCKzvgBoIrZiJcQfYUJs7zp4goeMUYpkb8GgCM12QacYXemomYr0="
+  file_glob: true
+  file:
+    - wasm-gc-$TRAVIS_TAG-$TARGET.tar.gz
+  on:
+    condition: $DEPLOY = 1
+    tags: true
+  provider: releases
+  skip_cleanup: true

@@ -1,0 +1,41 @@
+environment:
+  global:
+    RUSTFLAGS: -Ctarget-feature=+crt-static
+  matrix:
+    - TARGET: x86_64-pc-windows-msvc
+      DEPLOY: 1
+
+install:
+  # Install rust, x86_64-pc-windows-msvc host
+  - appveyor-retry appveyor DownloadFile https://win.rustup.rs/ -FileName rustup-init.exe
+  - rustup-init.exe -y --default-host x86_64-pc-windows-msvc --default-toolchain nightly
+  - set PATH=%PATH%;C:\Users\appveyor\.cargo\bin
+  - rustc -V
+  - cargo -V
+
+build: false
+
+test_script:
+  - cargo test --locked
+  - cargo build --release
+
+before_deploy:
+  - ps: |
+        $NAME = "wasm-gc-${env:APPVEYOR_REPO_TAG_NAME}-${env:TARGET}"
+        New-Item -Path $NAME -ItemType directory
+        Copy-Item target/release/wasm-gc.exe "${NAME}/"
+        Copy-Item LICENSE-MIT "${NAME}/"
+        Copy-Item LICENSE-APACHE "${NAME}/"
+        Copy-Item README.md "${NAME}/"
+        7z a -ttar "${NAME}.tar" "${NAME}"
+        7z a "${NAME}.tar.gz" "${NAME}.tar"
+        Push-AppveyorArtifact "${NAME}.tar.gz"
+
+deploy:
+  artifact: /.*\.tar.gz/
+  auth_token:
+    secure: fDuN5NCqK7FRNCJknOgFUq3npP31JDY82gZZhVZRGFm18CbW830UIsHmk01eapez
+  description: ''
+  on:
+    appveyor_repo_tag: true
+  provider: GitHub
