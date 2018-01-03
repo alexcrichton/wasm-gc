@@ -13,8 +13,41 @@ use parity_wasm::elements::{
     Deserialize
 };
 
-use gc::garbage_collect;
 pub use error::Error;
+
+pub struct Config {
+    demangle: bool,
+}
+
+impl Config {
+    /// Creates a blank slate of configuration, ready to gc wasm files.
+    pub fn new() -> Config {
+        Config {
+            demangle: true,
+        }
+    }
+
+    /// Configures whether or not this will demangle symbols as part of the gc
+    /// pass.
+    pub fn demangle(&mut self, demangle: bool) -> &mut Self {
+        self.demangle = demangle;
+        self
+    }
+
+    /// Runs gc passes over the wasm input module `input`, returning the
+    /// serialized output.
+    pub fn gc(&mut self, mut bytecode: &[u8]) -> Result<Vec<u8>, Error> {
+        let mut module = Module::deserialize(&mut bytecode).map_err(error::from)?;
+        self._gc(&mut module);
+        let mut output = Vec::new();
+        module.serialize(&mut output).map_err(error::from)?;
+        Ok(output)
+    }
+
+    fn _gc(&mut self, module: &mut Module) {
+        gc::run(self, module);
+    }
+}
 
 /// Garbage collects the webassembly bytecode from `input_path` and saves it to `output_path`.
 pub fn garbage_collect_file<I, O>(input_path: I, output_path: O) -> Result<(), Error>
@@ -27,18 +60,13 @@ where
 
 fn _gc_file(input: &Path, output: &Path) -> Result<(), Error> {
     let mut module = parity_wasm::deserialize_file(input).map_err(error::from)?;
-    garbage_collect(&mut module);
+    Config::new()._gc(&mut module);
     parity_wasm::serialize_to_file(output, module).map_err(error::from)?;
 
     Ok(())
 }
 
 /// Garbage collects given webassembly bytecode.
-pub fn garbage_collect_slice(mut bytecode: &[u8]) -> Result<Vec<u8>, Error> {
-    let mut module = Module::deserialize(&mut bytecode).map_err(error::from)?;
-    garbage_collect(&mut module);
-
-    let mut output = Vec::new();
-    module.serialize(&mut output).map_err(error::from)?;
-    Ok(output)
+pub fn garbage_collect_slice(bytecode: &[u8]) -> Result<Vec<u8>, Error> {
+    Config::new().gc(bytecode)
 }

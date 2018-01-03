@@ -8,7 +8,8 @@ name = "wasm-gc"
 path = "src/main.rs"
 
 [dependencies]
-wasm-gc = { path = "wasm-gc" }
 env_logger = { version = "0.4", default-features = false }
+getopts = "0.2"
+wasm-gc = { path = "wasm-gc" }
 
 [workspace]

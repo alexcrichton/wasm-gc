@@ -3,8 +3,9 @@ use std::str;
 
 use parity_wasm::elements::*;
 use rustc_demangle;
+use Config;
 
-pub fn garbage_collect(module: &mut Module) {
+pub fn run(config: &mut Config, module: &mut Module) {
     let analysis = {
         let mut cx = LiveContext::new(&module);
 
@@ -109,7 +110,7 @@ pub fn garbage_collect(module: &mut Module) {
         cx.analysis
     };
 
-    let cx = RemapContext::new(&module, &analysis);
+    let cx = RemapContext::new(&module, &analysis, config);
     for i in (0..module.sections().len()).rev() {
         let retain = match module.sections_mut()[i] {
             Section::Unparsed { .. } => {
@@ -431,6 +432,7 @@ impl<'a> LiveContext<'a> {
 
 struct RemapContext<'a> {
     analysis: &'a Analysis,
+    config: &'a Config,
     functions: Vec<u32>,
     globals: Vec<u32>,
     types: Vec<u32>,
@@ -439,7 +441,7 @@ struct RemapContext<'a> {
 }
 
 impl<'a> RemapContext<'a> {
-    fn new(m: &Module, analysis: &'a Analysis) -> RemapContext<'a> {
+    fn new(m: &Module, analysis: &'a Analysis, config: &'a Config) -> RemapContext<'a> {
         let mut nfunctions = 0;
         let mut functions = Vec::new();
         let mut nglobals = 0;
@@ -531,6 +533,7 @@ impl<'a> RemapContext<'a> {
             memories,
             tables,
             types,
+            config,
         }
     }
 
@@ -841,8 +844,12 @@ impl<'a> RemapContext<'a> {
     fn serialize_name_map(&self, names: &[(u32, &str)], dst: &mut Vec<u8>) {
         VarUint32::from(names.len()).serialize(dst).unwrap();
         for &(index, name) in names {
-            let name = format!("{}", rustc_demangle::demangle(name));
             VarUint32::from(index).serialize(dst).unwrap();
+            let name = if self.config.demangle {
+                format!("{}", rustc_demangle::demangle(name))
+            } else {
+                name.to_string()
+            };
             VarUint32::from(name.len()).serialize(dst).unwrap();
             dst.extend(name.as_bytes());
         }
