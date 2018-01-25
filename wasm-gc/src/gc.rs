@@ -1,4 +1,5 @@
 use std::collections::{BTreeSet, HashSet};
+use std::mem;
 use std::str;
 
 use parity_wasm::elements::*;
@@ -117,10 +118,6 @@ pub fn run(config: &mut Config, module: &mut Module) {
                 info!("unparsed section");
                 continue
             }
-            Section::Custom(ref mut s) if s.name() == "name" => {
-                cx.remap_name_section(s);
-                continue
-            }
             Section::Custom(ref s) => {
                 info!("skipping custom section: {}", s.name());
                 continue
@@ -136,6 +133,7 @@ pub fn run(config: &mut Config, module: &mut Module) {
             Section::Element(ref mut s) => cx.remap_element_section(s),
             Section::Code(ref mut s) => cx.remap_code_section(s),
             Section::Data(ref mut s) => cx.remap_data_section(s),
+            Section::Name(ref mut s) => { cx.remap_name_section(s); true }
         };
         if !retain {
             debug!("remove empty section");
@@ -754,104 +752,35 @@ impl<'a> RemapContext<'a> {
         assert!(*i != u32::max_value());
     }
 
-    fn remap_name_section(&self, s: &mut CustomSection) {
-        let data = s.payload_mut();
-        *data = self.rebuild_name_section(data)
-            .expect("malformed name section");
-    }
-
-    fn rebuild_name_section(&self, mut data: &[u8]) -> Result<Vec<u8>, Error> {
-        // if true { return Ok(data.to_vec()) }
-        let mut res = Vec::new();
-        while data.len() > 0 {
-            let name_type = u8::from(VarUint7::deserialize(&mut data)?);
-            let name_payload_len = u32::from(VarUint32::deserialize(&mut data)?);
-            let (mut bytes, rest) = data.split_at(name_payload_len as usize);
-            data = rest;
-
-            match name_type {
-                // module name, we leave this unmangled
-                0 => {
-                    VarUint7::from(name_type).serialize(&mut res)?;
-                    VarUint32::from(name_payload_len).serialize(&mut res)?;
-                    res.extend(bytes);
-                }
-
-                // function map
-                1 => {
-                    let mut map = self.decode_name_map(&mut bytes)?;
-                    map.retain(|m| self.functions[m.0 as usize] != u32::max_value());
-                    for slot in map.iter_mut() {
-                        self.remap_function_idx(&mut slot.0);
+    fn remap_name_section(&self, s: &mut NameSection) {
+        match *s {
+            NameSection::Module(_) => {}
+            NameSection::Function(ref mut f) => {
+                let map = f.names_mut();
+                let new = IndexMap::with_capacity(map.len());
+                for (idx, name) in mem::replace(map, new) {
+                    let new_idx = self.functions[idx as usize];
+                    let name = if self.config.demangle {
+                        rustc_demangle::demangle(&name).to_string()
+                    } else {
+                        name
+                    };
+                    if new_idx != u32::max_value() {
+                        map.insert(new_idx, name);
                     }
-                    let mut tmp = Vec::new();
-                    self.serialize_name_map(&map, &mut tmp);
-
-                    VarUint7::from(name_type).serialize(&mut res)?;
-                    VarUint32::from(tmp.len()).serialize(&mut res)?;
-                    res.extend(tmp);
                 }
-
-                // local names
-                2 => {
-                    let count = u32::from(VarUint32::deserialize(&mut bytes)?);
-                    let mut locals = Vec::new();
-                    for _ in 0..count {
-                        let index = u32::from(VarUint32::deserialize(&mut bytes)?);
-                        let map = self.decode_name_map(&mut bytes)?;
-                        let new_index = self.functions[index as usize];
-                        if new_index == u32::max_value() {
-                            continue
-                        }
-                        locals.push((new_index, map));
-                    }
-
-                    let mut tmp = Vec::new();
-                    VarUint32::from(locals.len()).serialize(&mut tmp).unwrap();
-                    for (index, map) in locals {
-                        VarUint32::from(index).serialize(&mut tmp).unwrap();
-                        self.serialize_name_map(&map, &mut tmp);
-                    }
-
-                    VarUint7::from(name_type).serialize(&mut res)?;
-                    VarUint32::from(tmp.len()).serialize(&mut res)?;
-                    res.extend(tmp);
-                }
-
-                n => panic!("unknown name subsection type: {}", n),
             }
-        }
-        Ok(res)
-    }
-
-    fn decode_name_map<'b>(&self, bytes: &mut &'b [u8])
-        -> Result<Vec<(u32, &'b str)>, Error>
-    {
-        let count = u32::from(VarUint32::deserialize(bytes)?);
-        let mut names = Vec::with_capacity(count as usize);
-        for _ in 0..count {
-            let index = u32::from(VarUint32::deserialize(bytes)?);
-            let name_len = u32::from(VarUint32::deserialize(bytes)?);
-            let (name, rest) = bytes.split_at(name_len as usize);
-            *bytes = rest;
-            let name = str::from_utf8(name)
-                .expect("ill-formed utf-8 in name subsection");
-            names.push((index, name));
-        }
-        Ok(names)
-    }
-
-    fn serialize_name_map(&self, names: &[(u32, &str)], dst: &mut Vec<u8>) {
-        VarUint32::from(names.len()).serialize(dst).unwrap();
-        for &(index, name) in names {
-            VarUint32::from(index).serialize(dst).unwrap();
-            let name = if self.config.demangle {
-                format!("{}", rustc_demangle::demangle(name))
-            } else {
-                name.to_string()
-            };
-            VarUint32::from(name.len()).serialize(dst).unwrap();
-            dst.extend(name.as_bytes());
+            NameSection::Local(ref mut l) => {
+                let map = l.local_names_mut();
+                let new = IndexMap::with_capacity(map.len());
+                for (idx, value) in mem::replace(map, new) {
+                    let new_idx = self.functions[idx as usize];
+                    if new_idx != u32::max_value() {
+                        map.insert(new_idx, value);
+                    }
+                }
+            }
+            NameSection::Unparsed { .. } => {}
         }
     }
 }
