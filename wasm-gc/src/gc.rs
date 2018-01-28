@@ -75,6 +75,20 @@ pub fn run(config: &mut Config, module: &mut Module) {
         cx.blacklist.insert("__mulosi4");
         cx.blacklist.insert("__mulodi4");
         cx.blacklist.insert("__muloti4");
+        cx.blacklist.insert("__lesf2");
+        cx.blacklist.insert("__gesf2");
+        cx.blacklist.insert("__unordsf2");
+        cx.blacklist.insert("__eqsf2");
+        cx.blacklist.insert("__ltsf2");
+        cx.blacklist.insert("__nesf2");
+        cx.blacklist.insert("__gtsf2");
+        cx.blacklist.insert("__ledf2");
+        cx.blacklist.insert("__gedf2");
+        cx.blacklist.insert("__unorddf2");
+        cx.blacklist.insert("__eqdf2");
+        cx.blacklist.insert("__ltdf2");
+        cx.blacklist.insert("__nedf2");
+        cx.blacklist.insert("__gtdf2");
         cx.blacklist.insert("rust_eh_personality");
 
         if let Some(section) = module.export_section() {
