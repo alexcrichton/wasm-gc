@@ -9,7 +9,7 @@ use std::io::{Read, Write};
 use getopts::Options;
 
 fn main() {
-    env_logger::init().unwrap();
+    env_logger::init();
 
     let mut opts = Options::new();
     opts.optopt("o", "", "set output file name", "NAME");

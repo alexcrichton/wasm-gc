@@ -12,5 +12,5 @@ categories = ["development-tools"]
 
 [dependencies]
 parity-wasm = "0.23"
-log = "0.3"
+log = "0.4"
 rustc-demangle = "0.1.5"
