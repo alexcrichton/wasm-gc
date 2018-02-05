@@ -37,7 +37,11 @@ impl Config {
     /// Runs gc passes over the wasm input module `input`, returning the
     /// serialized output.
     pub fn gc(&mut self, mut bytecode: &[u8]) -> Result<Vec<u8>, Error> {
-        let mut module = Module::deserialize(&mut bytecode).map_err(error::from)?;
+        let mut module = Module::deserialize(&mut bytecode)
+            .map_err(error::from)?
+            .parse_names()
+            .map_err(|(mut l, _)| l.remove(0).1)
+            .map_err(error::from)?;
         self._gc(&mut module);
         let mut output = Vec::new();
         module.serialize(&mut output).map_err(error::from)?;
@@ -59,7 +63,11 @@ where
 }
 
 fn _gc_file(input: &Path, output: &Path) -> Result<(), Error> {
-    let mut module = parity_wasm::deserialize_file(input).map_err(error::from)?;
+    let mut module = parity_wasm::deserialize_file(input)
+        .map_err(error::from)?
+        .parse_names()
+        .map_err(|(mut l, _)| l.remove(0).1)
+        .map_err(error::from)?;
     Config::new()._gc(&mut module);
     parity_wasm::serialize_to_file(output, module).map_err(error::from)?;
 
