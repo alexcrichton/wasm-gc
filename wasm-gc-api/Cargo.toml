@@ -1,5 +1,5 @@
 [package]
-name = "wasm-gc"
+name = "wasm-gc-api"
 version = "0.1.0"
 authors = ["Alex Crichton <alex@alexcrichton.com>"]
 repository = "https://github.com/alexcrichton/wasm-gc"
@@ -9,6 +9,9 @@ readme = "README.md"
 description = "A library to garbage collect webassembly modules"
 keywords = ["webasm"]
 categories = ["development-tools"]
+
+[lib]
+name = "wasm_gc"
 
 [dependencies]
 parity-wasm = "0.27"

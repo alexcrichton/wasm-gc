@@ -1,5 +1,5 @@
 [package]
-name = "wasm-gc-cli"
+name = "wasm-gc"
 version = "0.1.0"
 authors = ["Alex Crichton <alex@alexcrichton.com>"]
 
@@ -10,6 +10,6 @@ path = "src/main.rs"
 [dependencies]
 env_logger = { version = "0.5", default-features = false }
 getopts = "0.2"
-wasm-gc = { path = "wasm-gc" }
+wasm-gc-api = { path = "wasm-gc-api", version = "0.1" }
 
 [workspace]
