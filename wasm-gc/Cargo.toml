@@ -11,6 +11,6 @@ keywords = ["webasm"]
 categories = ["development-tools"]
 
 [dependencies]
-parity-wasm = "0.23"
+parity-wasm = "0.24"
 log = "0.4"
 rustc-demangle = "0.1.5"
