@@ -64,7 +64,7 @@ Usage of this command typically looks like:
     # Read input from one file and write it to another file
     wasm-gc input.wasm output.wasm
 
-    # Passing various optiosn
+    # Passing various options
     wasm-gc --no-demangle input.wasm -o output.wasm
 
 Please reports bugs to https://github.com/alexcrichton/wasm-gc if you find
