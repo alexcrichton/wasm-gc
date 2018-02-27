@@ -90,6 +90,7 @@ pub fn run(config: &mut Config, module: &mut Module) {
         cx.blacklist.insert("__nedf2");
         cx.blacklist.insert("__gtdf2");
         cx.blacklist.insert("rust_eh_personality");
+        cx.blacklist.insert("__extendsfdf2");
 
         if let Some(section) = module.export_section() {
             for (i, entry) in section.entries().iter().enumerate() {
