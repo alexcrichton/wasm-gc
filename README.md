@@ -26,4 +26,6 @@ Install `gcc`:
 
 `sudo apt update && sudo apt install gcc -y`
 
-and then install the crate: `cargo install --git https://github.com/alexcrichton/wasm-gc`
+and then install the crate:
+
+`cargo install wasm-gc`
