@@ -1,9 +1,9 @@
 [[package]]
 name = "atty"
-version = "0.2.6"
+version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.2.36 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.39 (registry+https://github.com/rust-lang/crates.io-index)",
  "termion 1.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -25,11 +25,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "env_logger"
-version = "0.5.4"
+version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "atty 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "humantime 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "atty 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "humantime 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "termcolor 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -55,7 +55,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "humantime"
-version = "1.1.0"
+version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "quick-error 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -63,7 +63,7 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.36"
+version = "0.2.39"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -92,7 +92,7 @@ dependencies = [
 
 [[package]]
 name = "parity-wasm"
-version = "0.27.1"
+version = "0.27.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "byteorder 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -114,7 +114,7 @@ name = "parking_lot_core"
 version = "0.2.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.2.36 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.39 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "smallvec 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -131,7 +131,7 @@ version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "fuchsia-zircon 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.36 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.39 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -176,7 +176,7 @@ name = "termion"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.2.36 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.39 (registry+https://github.com/rust-lang/crates.io-index)",
  "redox_syscall 0.1.37 (registry+https://github.com/rust-lang/crates.io-index)",
  "redox_termios 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -185,7 +185,7 @@ dependencies = [
 name = "wasm-gc"
 version = "0.1.1"
 dependencies = [
- "env_logger 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "env_logger 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "getopts 0.2.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "wasm-gc-api 0.1.1",
 ]
@@ -195,7 +195,7 @@ name = "wasm-gc-api"
 version = "0.1.1"
 dependencies = [
  "log 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-wasm 0.27.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "parity-wasm 0.27.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-demangle 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -227,20 +227,20 @@ dependencies = [
 ]
 
 [metadata]
-"checksum atty 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)" = "8352656fd42c30a0c3c89d26dea01e3b77c0ab2af18230835c15e2e13cd51859"
+"checksum atty 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)" = "af80143d6f7608d746df1520709e5d141c96f240b0e62b0aa41bdfb53374d9d4"
 "checksum bitflags 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "b3c30d3802dfb7281680d6285f2ccdaa8c2d8fee41f93805dba5c4cf50dc23cf"
 "checksum byteorder 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "652805b7e73fada9d85e9a6682a4abd490cb52d96aeecc12e33a0de34dfd0d23"
 "checksum cfg-if 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "d4c819a1287eb618df47cc647173c5c4c66ba19d888a6e50d605672aed3140de"
-"checksum env_logger 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)" = "f3cc21490995c841d68e00276eba02071ebb269ec24011d5728bd00eabd39e31"
+"checksum env_logger 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)" = "0561146661ae44c579e993456bc76d11ce1e0c7d745e57b2fa7146b6e49fa2ad"
 "checksum fuchsia-zircon 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "2e9763c69ebaae630ba35f74888db465e49e259ba1bc0eda7d06f4a067615d82"
 "checksum fuchsia-zircon-sys 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "3dcaa9ae7725d12cdb85b3ad99a434db70b468c09ded17e012d86b5c1010f7a7"
 "checksum getopts 0.2.17 (registry+https://github.com/rust-lang/crates.io-index)" = "b900c08c1939860ce8b54dc6a89e26e00c04c380fd0e09796799bd7f12861e05"
-"checksum humantime 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "5369e01a05e3404c421b5d6dcfea6ecf7d5e65eba8a275948151358cd8282042"
-"checksum libc 0.2.36 (registry+https://github.com/rust-lang/crates.io-index)" = "1e5d97d6708edaa407429faa671b942dc0f2727222fb6b6539bf1db936e4b121"
+"checksum humantime 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "0484fda3e7007f2a4a0d9c3a703ca38c71c54c55602ce4660c419fd32e188c9e"
+"checksum libc 0.2.39 (registry+https://github.com/rust-lang/crates.io-index)" = "f54263ad99207254cf58b5f701ecb432c717445ea2ee8af387334bdd1a03fdff"
 "checksum log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)" = "e19e8d5c34a3e0e2223db8e060f9e8264aeeb5c5fc64a4ee9965c062211c024b"
 "checksum log 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)" = "89f010e843f2b1a31dbd316b3b8d443758bc634bed37aabade59c686d644e0a2"
 "checksum owning_ref 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "cdf84f41639e037b484f93433aa3897863b561ed65c6e59c7073d7c561710f37"
-"checksum parity-wasm 0.27.1 (registry+https://github.com/rust-lang/crates.io-index)" = "29f715e212dcc9d423525f7e2b56740916e77864d03e00300f05037efd30411d"
+"checksum parity-wasm 0.27.4 (registry+https://github.com/rust-lang/crates.io-index)" = "1ba1ceaec13865445bcf05117867e4c6456d91c3617cdff2f3ef77b92b18cd12"
 "checksum parking_lot 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)" = "9fd9d732f2de194336fb02fe11f9eed13d9e76f13f4315b4d88a14ca411750cd"
 "checksum parking_lot_core 0.2.13 (registry+https://github.com/rust-lang/crates.io-index)" = "538ef00b7317875071d5e00f603f24d16f0b474c1a5fc0ccb8b454ca72eafa79"
 "checksum quick-error 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "eda5fe9b71976e62bc81b781206aaa076401769b2143379d3eb2118388babac4"
