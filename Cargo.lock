@@ -187,12 +187,12 @@ version = "0.1.1"
 dependencies = [
  "env_logger 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "getopts 0.2.17 (registry+https://github.com/rust-lang/crates.io-index)",
- "wasm-gc-api 0.1.1",
+ "wasm-gc-api 0.1.2",
 ]
 
 [[package]]
 name = "wasm-gc-api"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "log 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-wasm 0.27.4 (registry+https://github.com/rust-lang/crates.io-index)",
