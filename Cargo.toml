@@ -20,3 +20,9 @@ getopts = "0.2"
 wasm-gc-api = { path = "wasm-gc-api", version = "0.1" }
 
 [workspace]
+members = ['wasm-gc-capi']
+
+[profile.release]
+panic = 'abort'
+lto = true
+opt-level = 's'
