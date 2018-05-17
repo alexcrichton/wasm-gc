@@ -25,4 +25,3 @@ members = ['wasm-gc-capi']
 [profile.release]
 panic = 'abort'
 lto = true
-opt-level = 's'
