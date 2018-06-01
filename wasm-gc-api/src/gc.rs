@@ -381,21 +381,21 @@ impl<'a> LiveContext<'a> {
         self.add_opcodes(body.code());
     }
 
-    fn add_opcodes(&mut self, code: &Opcodes) {
+    fn add_opcodes(&mut self, code: &Instructions) {
         for opcode in code.elements() {
             self.add_opcode(opcode);
         }
     }
 
-    fn add_opcode(&mut self, code: &Opcode) {
+    fn add_opcode(&mut self, code: &Instruction) {
         match *code {
-            Opcode::Block(ref b) |
-            Opcode::Loop(ref b) |
-            Opcode::If(ref b) => self.add_block_type(b),
-            Opcode::Call(f) => self.add_function(f),
-            Opcode::CallIndirect(t, _) => self.add_type(t),
-            Opcode::GetGlobal(i) |
-            Opcode::SetGlobal(i) => self.add_global(i),
+            Instruction::Block(ref b) |
+            Instruction::Loop(ref b) |
+            Instruction::If(ref b) => self.add_block_type(b),
+            Instruction::Call(f) => self.add_function(f),
+            Instruction::CallIndirect(t, _) => self.add_type(t),
+            Instruction::GetGlobal(i) |
+            Instruction::SetGlobal(i) => self.add_global(i),
             _ => {}
         }
     }
@@ -654,7 +654,7 @@ impl<'a> RemapContext<'a> {
 
     fn remap_init_expr(&self, s: &mut InitExpr) {
         for code in s.code_mut() {
-            self.remap_opcode(code);
+            self.remap_instruction(code);
         }
     }
 
@@ -704,21 +704,21 @@ impl<'a> RemapContext<'a> {
         self.remap_code(b.code_mut());
     }
 
-    fn remap_code(&self, c: &mut Opcodes) {
-        for op in c.elements_mut() {
-            self.remap_opcode(op);
+    fn remap_code(&self, c: &mut Instructions) {
+        for i in c.elements_mut() {
+            self.remap_instruction(i);
         }
     }
 
-    fn remap_opcode(&self, op: &mut Opcode) {
-        match *op {
-            Opcode::Block(ref mut b) |
-            Opcode::Loop(ref mut b) |
-            Opcode::If(ref mut b) => self.remap_block_type(b),
-            Opcode::Call(ref mut f) => self.remap_function_idx(f),
-            Opcode::CallIndirect(ref mut t, _) => self.remap_type_idx(t),
-            Opcode::GetGlobal(ref mut i) |
-            Opcode::SetGlobal(ref mut i) => self.remap_global_idx(i),
+    fn remap_instruction(&self, i: &mut Instruction) {
+        match *i {
+            Instruction::Block(ref mut b) |
+            Instruction::Loop(ref mut b) |
+            Instruction::If(ref mut b) => self.remap_block_type(b),
+            Instruction::Call(ref mut f) => self.remap_function_idx(f),
+            Instruction::CallIndirect(ref mut t, _) => self.remap_type_idx(t),
+            Instruction::GetGlobal(ref mut i) |
+            Instruction::SetGlobal(ref mut i) => self.remap_global_idx(i),
             _ => {}
         }
     }
