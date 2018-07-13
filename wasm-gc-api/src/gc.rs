@@ -134,7 +134,7 @@ pub fn run(config: &mut Config, module: &mut Module) {
             }
             Section::Custom(ref s) => {
                 if !cx.config.keep_debug && s.name().starts_with(".debug_") {
-                    true
+                    false
                 } else {
                     info!("skipping custom section: {}", s.name());
                     continue
