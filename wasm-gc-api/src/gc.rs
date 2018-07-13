@@ -133,8 +133,12 @@ pub fn run(config: &mut Config, module: &mut Module) {
                 continue
             }
             Section::Custom(ref s) => {
-                info!("skipping custom section: {}", s.name());
-                continue
+                if !cx.config.keep_debug && s.name().starts_with(".debug_") {
+                    true
+                } else {
+                    info!("skipping custom section: {}", s.name());
+                    continue
+                }
             }
             Section::Reloc(..) => {
                 info!("skipping reloc section");

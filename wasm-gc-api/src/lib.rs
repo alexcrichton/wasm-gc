@@ -17,6 +17,7 @@ pub use error::Error;
 
 pub struct Config {
     demangle: bool,
+    keep_debug: bool,
 }
 
 impl Config {
@@ -24,6 +25,7 @@ impl Config {
     pub fn new() -> Config {
         Config {
             demangle: true,
+            keep_debug: false,
         }
     }
 
@@ -31,6 +33,12 @@ impl Config {
     /// pass.
     pub fn demangle(&mut self, demangle: bool) -> &mut Self {
         self.demangle = demangle;
+        self
+    }
+
+    /// Configures whether or not debug sections will be preserved.
+    pub fn keep_debug(&mut self, keep_debug: bool) -> &mut Self {
+        self.keep_debug = keep_debug;
         self
     }
 
