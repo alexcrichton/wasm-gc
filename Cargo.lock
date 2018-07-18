@@ -70,7 +70,7 @@ dependencies = [
 
 [[package]]
 name = "parity-wasm"
-version = "0.31.0"
+version = "0.31.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "byteorder 1.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -232,7 +232,7 @@ name = "wasm-gc-api"
 version = "0.1.8"
 dependencies = [
  "log 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-wasm 0.31.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "parity-wasm 0.31.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-demangle 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -283,7 +283,7 @@ dependencies = [
 "checksum itoa 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "5adb58558dcd1d786b5f0bd15f3226ee23486e24b7b58304b60f64dc68e62606"
 "checksum libc 0.2.42 (registry+https://github.com/rust-lang/crates.io-index)" = "b685088df2b950fccadf07a7187c8ef846a959c142338a48f9dc0b94517eb5f1"
 "checksum log 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)" = "61bd98ae7f7b754bc53dca7d44b604f733c6bba044ea6f41bc8d89272d8161d2"
-"checksum parity-wasm 0.31.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e1c91199d14bd5b78ecade323d4a891d094799749c1b9e82d9c590c2e2849a40"
+"checksum parity-wasm 0.31.1 (registry+https://github.com/rust-lang/crates.io-index)" = "8f026fa6e6245c1aa477873f7f8c805502b86b6e12e3762c9ad13a4f350550ea"
 "checksum proc-macro2 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)" = "effdb53b25cdad54f8f48843d67398f7ef2e14f12c1b4cb4effc549a6462a4d6"
 "checksum quick-error 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "9274b940887ce9addde99c4eee6b5c44cc494b182b97e73dc8ffdcb3397fd3f0"
 "checksum quote 0.6.3 (registry+https://github.com/rust-lang/crates.io-index)" = "e44651a0dc4cdd99f71c83b561e221f714912d11af1a4dff0631f923d53af035"
