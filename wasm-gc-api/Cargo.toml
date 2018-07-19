@@ -16,4 +16,4 @@ name = "wasm_gc"
 [dependencies]
 parity-wasm = "0.31"
 log = "0.4"
-rustc-demangle = "0.1.5"
+rustc-demangle = "0.1.9"
