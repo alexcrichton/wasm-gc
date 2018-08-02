@@ -1,10 +1,12 @@
-use std::collections::{BTreeSet, HashSet};
+use std::collections::HashSet;
 use std::mem;
 use std::str;
 
 use parity_wasm::elements::*;
 use rustc_demangle;
+
 use Config;
+use bitvec::BitSet;
 
 pub fn run(config: &mut Config, module: &mut Module) {
     let analysis = {
@@ -166,13 +168,15 @@ pub fn run(config: &mut Config, module: &mut Module) {
 
 #[derive(Default)]
 struct Analysis {
-    codes: BTreeSet<u32>,
-    tables: BTreeSet<u32>,
-    memories: BTreeSet<u32>,
-    globals: BTreeSet<u32>,
-    types: BTreeSet<u32>,
-    imports: BTreeSet<u32>,
-    exports: BTreeSet<u32>,
+    codes: BitSet,
+    tables: BitSet,
+    memories: BitSet,
+    globals: BitSet,
+    types: BitSet,
+    imports: BitSet,
+    exports: BitSet,
+    functions: BitSet,
+    all_globals: BitSet,
 }
 
 enum Memories<'a> {
@@ -198,6 +202,8 @@ struct LiveContext<'a> {
     memories: Option<Memories<'a>>,
     global_section: Option<&'a GlobalSection>,
     import_section: Option<&'a ImportSection>,
+    imported_functions: u32,
+    imported_globals: u32,
     analysis: Analysis,
 }
 
@@ -224,32 +230,41 @@ impl<'a> LiveContext<'a> {
             memories: memories,
             global_section: module.global_section(),
             import_section: module.import_section(),
+            imported_functions: module.import_section()
+                .map(|s| s.functions())
+                .unwrap_or(0) as u32,
+            imported_globals: module.import_section()
+                .map(|s| s.globals())
+                .unwrap_or(0) as u32,
             analysis: Analysis::default(),
         }
     }
 
-    fn add_function(&mut self, mut idx: u32) {
-        if let Some(imports) = self.import_section {
-            if idx < imports.functions() as u32 {
-                debug!("adding import: {}", idx);
-                let (i, import) = imports.entries()
-                    .iter()
-                    .enumerate()
-                    .filter(|&(_, i)| {
-                        match *i.external() {
-                            External::Function(_) => true,
-                            _ => false,
-                        }
-                    })
-                    .skip(idx as usize)
-                    .next()
-                    .expect("expected an imported function with this index");
-                let i = i as u32;
-                self.analysis.imports.insert(i);
-                return self.add_import_entry(import, i);
-            }
-            idx -= imports.functions() as u32;
+    fn add_function(&mut self, idx: u32) {
+        if !self.analysis.functions.insert(idx) {
+            return
         }
+
+        if idx < self.imported_functions {
+            let imports = self.import_section.unwrap();
+            debug!("adding import: {}", idx);
+            let (i, import) = imports.entries()
+                .iter()
+                .enumerate()
+                .filter(|&(_, i)| {
+                    match *i.external() {
+                        External::Function(_) => true,
+                        _ => false,
+                    }
+                })
+                .skip(idx as usize)
+                .next()
+                .expect("expected an imported function with this index");
+            let i = i as u32;
+            self.analysis.imports.insert(i);
+            return self.add_import_entry(import, i);
+        }
+        let idx = idx - self.imported_functions;
 
         if !self.analysis.codes.insert(idx) {
             return
@@ -310,28 +325,31 @@ impl<'a> LiveContext<'a> {
         assert!(memories.has_entry(idx as usize));
     }
 
-    fn add_global(&mut self, mut idx: u32) {
-        if let Some(imports) = self.import_section {
-            if idx < imports.globals() as u32 {
-                debug!("adding global import: {}", idx);
-                let (i, import) = imports.entries()
-                    .iter()
-                    .enumerate()
-                    .filter(|&(_, i)| {
-                        match *i.external() {
-                            External::Global(_) => true,
-                            _ => false,
-                        }
-                    })
-                    .skip(idx as usize)
-                    .next()
-                    .expect("expected an imported global with this index");
-                let i = i as u32;
-                self.analysis.imports.insert(i);
-                return self.add_import_entry(import, i);
-            }
-            idx -= imports.globals() as u32;
+    fn add_global(&mut self, idx: u32) {
+        if !self.analysis.all_globals.insert(idx) {
+            return
         }
+
+        if idx < self.imported_globals {
+            let imports = self.import_section.unwrap();
+            debug!("adding global import: {}", idx);
+            let (i, import) = imports.entries()
+                .iter()
+                .enumerate()
+                .filter(|&(_, i)| {
+                    match *i.external() {
+                        External::Global(_) => true,
+                        _ => false,
+                    }
+                })
+                .skip(idx as usize)
+                .next()
+                .expect("expected an imported global with this index");
+            let i = i as u32;
+            self.analysis.imports.insert(i);
+            return self.add_import_entry(import, i);
+        }
+        let idx = idx - self.imported_globals;
 
         if !self.analysis.globals.insert(idx) {
             return
@@ -557,7 +575,7 @@ impl<'a> RemapContext<'a> {
         }
     }
 
-    fn retain<T>(&self, set: &BTreeSet<u32>, list: &mut Vec<T>, name: &str) {
+    fn retain<T>(&self, set: &BitSet, list: &mut Vec<T>, name: &str) {
         for i in (0..list.len()).rev().map(|x| x as u32) {
             if !set.contains(&i) {
                 debug!("removing {} {}", name, i);

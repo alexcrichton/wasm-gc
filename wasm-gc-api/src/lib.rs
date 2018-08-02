@@ -5,6 +5,7 @@ extern crate rustc_demangle;
 
 mod gc;
 mod error;
+mod bitvec;
 
 use std::any::Any;
 use std::mem;
