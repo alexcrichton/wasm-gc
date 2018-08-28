@@ -14,6 +14,6 @@ categories = ["development-tools"]
 name = "wasm_gc"
 
 [dependencies]
-parity-wasm = "0.31"
+parity-wasm = "0.32"
 log = "0.4"
 rustc-demangle = "0.1.9"
