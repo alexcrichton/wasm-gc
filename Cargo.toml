@@ -25,3 +25,6 @@ members = ['wasm-gc-capi']
 [profile.release]
 panic = 'abort'
 lto = true
+
+[patch.crates-io]
+parity-wasm = { git = 'https://github.com/alexcrichton/parity-wasm', branch = 'bulk-memory' }

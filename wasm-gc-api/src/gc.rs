@@ -456,7 +456,9 @@ impl<'a> LiveContext<'a> {
 
     fn add_data_segment(&mut self, data: &DataSegment) {
         self.add_memory(data.index());
-        self.add_init_expr(data.offset());
+        if let Some(s) = data.offset() {
+            self.add_init_expr(s);
+        }
     }
 
     fn add_element_segment(&mut self, seg: &ElementSegment) {
@@ -464,7 +466,9 @@ impl<'a> LiveContext<'a> {
             self.add_function(*member);
         }
         self.add_table(seg.index());
-        self.add_init_expr(seg.offset());
+        if let Some(s) = seg.offset() {
+            self.add_init_expr(s);
+        }
     }
 }
 
@@ -711,7 +715,9 @@ impl<'a> RemapContext<'a> {
         for m in s.members_mut() {
             self.remap_function_idx(m);
         }
-        self.remap_init_expr(s.offset_mut());
+        if let Some(s) = s.offset_mut() {
+            self.remap_init_expr(s);
+        }
     }
 
     fn remap_code_section(&self, s: &mut CodeSection) -> bool {
@@ -763,7 +769,9 @@ impl<'a> RemapContext<'a> {
         let mut i = segment.index();
         self.remap_memory_idx(&mut i);
         assert_eq!(segment.index(), i);
-        self.remap_init_expr(segment.offset_mut());
+        if let Some(s) = segment.offset_mut() {
+            self.remap_init_expr(s);
+        }
     }
 
     fn remap_type_idx(&self, i: &mut u32) {
